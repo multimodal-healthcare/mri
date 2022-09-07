@@ -1,4 +1,4 @@
-#  MRI-based diagnostic
+#  MRI
 This is the repository for the Magnetic Resonance Imaging (MRI) modality of the pipeline. Together with other modality, we build a multi-modal AI model to diagnose Cardiovascular Disease (CVD). 
 
 ## Requirements

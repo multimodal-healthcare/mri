@@ -11,7 +11,7 @@ This is the repository for the Magnetic Resonance Imaging (MRI) modality of the 
 `matplotlib==3.5.3`  
 
 ## Data Processing Overview
-Below is the dataset organization
+We use the data from [the Coherent dataset](https://www.researchgate.net/publication/359859530_The_Coherent_Data_Set_Combining_Patient_Data_and_Imaging_in_a_Comprehensive_Synthetic_Health_Record). Below is the dataset organization (pictures from the Coherent dataset paper)
 
 ![](./images/dataset_organization.png)
 

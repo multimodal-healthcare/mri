@@ -3,6 +3,7 @@ This is the repository for the Magnetic Resonance Imaging (MRI) modality of the 
 
 ## Requirements
 `python==3.9.13`  
+`torch==1.12.1+cu102`  
 `pydicom==2.3.0`  
 `numpy==1.23.2`  
 `pandas==1.4.4`  

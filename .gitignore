@@ -131,3 +131,4 @@ dmypy.json
 # Others
 data/*
 !data/.gitkeep
+**lightning_logs/

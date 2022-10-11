@@ -10,6 +10,8 @@ This is the repository for the Magnetic Resonance Imaging (MRI) modality of the 
 `ipywidgets==8.0.2`  
 `skimage==0.19.3`  
 `matplotlib==3.5.3`  
+`wandb==0.13.4`  
+`pytorch_lightning==1.7.7`  
 
 ## Data Processing Overview
 We use the data from [the Coherent dataset](https://www.researchgate.net/publication/359859530_The_Coherent_Data_Set_Combining_Patient_Data_and_Imaging_in_a_Comprehensive_Synthetic_Health_Record). Below is the dataset organization (pictures from the Coherent dataset paper)

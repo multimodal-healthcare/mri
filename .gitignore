@@ -132,3 +132,4 @@ dmypy.json
 data/*
 !data/.gitkeep
 **lightning_logs/
+**wandb/

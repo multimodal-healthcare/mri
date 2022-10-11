@@ -1,5 +1,3 @@
-import csv
-from tkinter import PROJECTING
 import torch
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
@@ -7,21 +5,37 @@ from torchvision.io import read_image
 from torchvision import transforms
 from torchvision.models import resnet18
 from torch import nn
+
 import pytorch_lightning as pl
+from pytorch_lightning.loggers import WandbLogger
+from pytorch_lightning.callbacks import ModelCheckpoint
+
+import wandb
 
 import ast
 from pathlib import Path
 import pandas as pd
 import numpy as np
-import wandb
 import matplotlib.pyplot as plt
 from skimage.io import imread
 
-# project_path = Path.cwd().parent
+# wandb
+wandb.init(project="mri", 
+           entity="multi-modal-fsdl2022",
+           config = {
+                "learning_rate": 0.001,
+                "epochs": 5,
+                "train_batch_size": 128,
+                "val_batch_size": 16,
+           })
+wandb_logger = WandbLogger(log_model="all")
+checkpoint_callback = ModelCheckpoint(monitor='val_loss_epoch', mode='min')
+
+# Necessary paths
 project_path = Path(__file__).parent.parent
 mri_dir = project_path/'data/processed/mri'
 csv_dir = project_path/'data/processed/csv'
-
+log_dir = Path("training") / "logs"
 
 class MRIDataset(Dataset):
 
@@ -60,15 +74,16 @@ class MRIDataset(Dataset):
 
 class MRIModel(pl.LightningModule):
 
-    def __init__(self):
+    def __init__(self, lr=0.001):
         super().__init__()
-
+        self.lr = lr
         self.resnet = resnet18()
         self.resnet.conv1 = nn.Conv2d(1, 64, kernel_size=(7, 7),  # change input channel to be 1 instead of 3 
                                       stride=(2, 2), padding=(3, 3), bias=False)
         # add a linear layer at the end for transfer learning
         self.linear = nn.Linear(in_features=self.resnet.fc.out_features,
                                 out_features=5)
+        self.save_hyperparameters()  # log hyperparameters
 
     # optionally, define a forward method
     def forward(self, xs):
@@ -80,38 +95,42 @@ class MRIModel(pl.LightningModule):
         xs, ys = batch
         y_hats = self.forward(xs)
         loss = F.binary_cross_entropy_with_logits(y_hats, ys)
-        self.log("train_loss", loss, prog_bar=True, on_epoch=True, on_step=False)
+        self.log("train_loss", loss, prog_bar=True, on_epoch=True, on_step=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         xs, ys = batch
         y_hats = self.forward(xs)
         loss = F.binary_cross_entropy_with_logits(y_hats, ys)
-        self.log("val_loss", loss, prog_bar=True, on_epoch=True)
+        self.log("val_loss", loss, prog_bar=True, on_epoch=True, on_step=True)
+    
+    # def test_step(self, xs, batch_idx):
+    #     y_hats = self.resnet(xs)
+    #     y_hats = self.linear(y_hats)
+    #     return y_hats
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
         return optimizer
 
 
 if __name__ == '__main__':
-    # hyperparams
-    train_batch_size = 200
-    val_batch_size = 10
-    learning_rate = 1e-3
+
+    config = wandb.config
 
     train_dataset = MRIDataset(mri_dir, csv_dir, 'train')
     val_dataset = MRIDataset(mri_dir, csv_dir, 'val')
     train_loader = DataLoader(train_dataset, 
-                              batch_size=train_batch_size, 
+                              batch_size=config.train_batch_size, 
                               shuffle=True, # images are loaded in random order
                               num_workers=12)
                                                 
     val_loader = DataLoader(val_dataset, 
-                            batch_size=val_batch_size,
+                            batch_size=config.val_batch_size,
                             num_workers=12)
 
     model = MRIModel()
-    trainer = pl.Trainer(accelerator='gpu', devices=int(torch.cuda.is_available()), max_epochs=2)
+    trainer = pl.Trainer(accelerator='gpu', devices=int(torch.cuda.is_available()), 
+                         max_epochs=config.epochs, logger=wandb_logger, callbacks=[checkpoint_callback])
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=val_loader)
 
